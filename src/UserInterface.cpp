@@ -97,6 +97,11 @@ void UserInterface::showMessageNotYielding(const String& message,const int line)
     displayCentered(message,line);
  }
 
+ void UserInterface::showMessageTruncate(const String& message,const int line) {
+    String truncated = message.substring(0, 20);
+    displayCentered(truncated,line);
+ }
+
 void UserInterface::clearScreen() {
     display.clear();
 }

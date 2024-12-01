@@ -143,6 +143,15 @@ void IRSensor::scan() {
     rightScanner.scan();
 }
 
+int IRSensor::reflectanceRight() {
+    return lineSensorValues[RIGHT];
+}
+
+int IRSensor::reflectanceLeft() {
+    return lineSensorValues[LEFT];
+}
+
+
 bool IRSensor::seeingRight() {
     return lineSensorValues[RIGHT] > 900;
 }

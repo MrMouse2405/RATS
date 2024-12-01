@@ -41,7 +41,9 @@
  * Magnetic Anamoly Threshold
  * 
  */
-#define MAG_THRESHOLD 9000
+#define MAG_THRESHOLD 1000 //TODO: Measure and adjust
+
+#define MAG_DEBOUNCE_THRESHOLD 1000
 
 /**
  * 
@@ -96,4 +98,3 @@ struct Vec3 {
 struct Pose {
     double x, y, theta;
 };
-
