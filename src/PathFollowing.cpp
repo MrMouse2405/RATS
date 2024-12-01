@@ -80,7 +80,7 @@ void PathFollowing::follow() {
         return;
     }
 
-    const LineDetectionResult result = IRSensor::detectLine();
+    LineDetectionResult result = IRSensor::detectLine();
     if (!result.exists()) {
         stop();
         return;
