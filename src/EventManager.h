@@ -11,6 +11,8 @@ typedef enum ES
     Collision,
     TurnLeft,
     TurnRight,
+    SensorEvent,
+    CollisionEvent,
     NUMBER_OF_EVENTS, // ALWAYS LAST
 } Event;
 

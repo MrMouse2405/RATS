@@ -5,6 +5,7 @@
 #include "Odemetry.h"
 #include "IntertialMeasurementUnit.h"
 #include "EventManager.h"
+#include "Queue.h"
 
 #define LOOP for(;;)
 #define EVENT(NAME,CODE) eventManager.setupListener(NAME,[](Event e){ CODE });
@@ -15,21 +16,36 @@ RobotOdometry odometry = RobotOdometry(WHEEL_DISTANCE, TICKS_PER_REV, WHEEL_DIAM
 IntertialMeasurementUnit ratsIMU = IntertialMeasurementUnit();
 EventManager eventManager = EventManager();
 
+// Initialize Logger
+LogQueue<String> logq = LogQueue<String>();
+
+milliseconds magDebounce = 0;
+
 void setupEvents();
 
 void setup() {
 	IRSensor::initializeIR();
 	UserInterface::initializeUI();
+    ratsIMU.myIMU.init();
+    ratsIMU.myIMU.enableDefault();
 
 	UserInterface::showWelcomeScreen();
 
 	IRSensor::calibrateIR();
 	ratsIMU.calibrate();
+    // ratsIMU.myIMU.readMag();
+    // UserInterface::showMessageTruncate("X "+String(ratsIMU.myIMU.m.x), 0);
+    // UserInterface::showMessageTruncate("Y "+String(ratsIMU.myIMU.m.y), 1);
+    // UserInterface::showMessageTruncate("Z "+String(ratsIMU.myIMU.m.z), 2);
     setupEvents();
+    while (1);
 }
 
 void loop() {
 	UserInterface::showGoScreen();
+    odometry.reset();
+    Pololu3piPlus32U4::Encoders::getCountsAndResetLeft();
+    Pololu3piPlus32U4::Encoders::getCountsAndResetRight();
 
 
     milliseconds sum = 0;
@@ -56,22 +72,18 @@ void loop() {
             while(eventManager.next());
             eventsPushed = false;
         }
-        // TODO: check magnetic anamoly
-        // if (MagneticAnamolyFound) {
-        //      eventManager.fireEvent(MagneticAnamoly); 
-        // }
-        // now make an enum in EventManager.h
-        // and put this code in setupEvents();
-        // EVENT(yourEvent,{
-        //  // your code for magnetic anamoly.
-        //  // keep this short and simple
-        //  // throw the info in a linkedlist
-        /// // or something to process it later, do as u wish.
-        // })
+
+        if (frameStart - magDebounce > MAG_DEBOUNCE_THRESHOLD) { // Debounce to ensure we aren't logging the same anomaly. This may need to be adjusted.
+            if (ratsIMU.foundAnamoly().exists()) { // TODO: Fix this lol
+                logq.add("Magnetic Anamoly", odometry.getPose().x, odometry.getPose().y); 
+                magDebounce = millis();
+            }
+        }
         // turn around
         if(IRSensor::isCollisionDetected()) {
             PathFollowing::stop();
             eventManager.cancelAllEvents();
+            logq.add("Collision Detected", odometry.getPose().x, odometry.getPose().y);
             PathFollowing::turnAround();
             PathFollowing::start();
             PathFollowing::speedUp();
@@ -107,6 +119,47 @@ void loop() {
 	UserInterface::showMessageNotYielding("X:" + String(odometry.getX()), 4);
 	UserInterface::showMessage("Y:" + String(odometry.getY()), 5);
 	UserInterface::clearScreen();
+
+
+    // Scroll through the log using button A and C
+    LogQueue<String>::Log* currentLog = logq.getFirst();
+    while (true) {
+        if (currentLog) {
+            String logMessage = "Log: " + currentLog->type;
+            int line = 1;
+            for (size_t i = 0; i < logMessage.length(); i += 20) {
+                UserInterface::showMessageTruncate(logMessage.substring(i, i + 20), line);
+                line += 1;
+            }
+            UserInterface::showMessageTruncate("X: " + String(currentLog->x / 10), line);
+            UserInterface::showMessageTruncate("Y: " + String(currentLog->y / 10), line + 1);
+        } else {
+            UserInterface::showMessageTruncate("No Logs Available", 0);
+        }
+
+        Pololu3piPlus32U4::ButtonA buttonA;
+        Pololu3piPlus32U4::ButtonB buttonB;
+        Pololu3piPlus32U4::ButtonC buttonC;
+        if (buttonA.isPressed()) {
+            if (currentLog && currentLog->prev) {
+                currentLog = currentLog->prev;
+                UserInterface::clearScreen();
+            }
+            while (buttonA.isPressed()); // Wait for button release
+        }
+
+        if (buttonC.isPressed()) {
+            if (currentLog && currentLog->next) {
+                currentLog = currentLog->next;
+                UserInterface::clearScreen();
+            }
+            while (buttonC.isPressed()); // Wait for button release
+        }
+
+        if (buttonB.isPressed()) {
+            break; // Exit log viewing
+        }
+    }
 }
 
 void setupEvents() {
@@ -152,7 +205,12 @@ void setupEvents() {
         PathFollowing::start();
 		switch(remaining) {
 			case 0: {
-				// TODO: Gyroscope
+				auto orientation = ratsIMU.getOrientation();
+                logq.add("SENSOR DATA: Pitch: "+ String(orientation.x) + 
+                " Roll: " + String(orientation.y)
+                + " Reflectance Left: " + String(IRSensor::reflectanceLeft()) +
+                " Reflectance Right: " + String(IRSensor::reflectanceRight()),
+                odometry.getPose().x, odometry.getPose().y);
 				delay(100);
 				FIRE(CheckFirst2Dots);
 				break;
@@ -199,4 +257,18 @@ void setupEvents() {
             eventManager.fireEvent(CheckFirst2Dots);
         }
 	})
+    
+    EVENT(MagneticAnamoly,{
+        
+       
+    })
+
+    EVENT(SensorEvent,{
+        
+        
+    })
+
+    EVENT(CollisionEvent,{
+        
+    })
 }

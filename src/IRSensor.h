@@ -31,6 +31,9 @@ namespace IRSensor {
     int getHistory();
     void eraseHistory();
 
+    int reflectanceRight();
+    int reflectanceLeft();
+
     LineDetectionResult detectLine();
     LineDetectionResult detectLineBiasedLeft();
     LineDetectionResult detectLineBiasedRight();
