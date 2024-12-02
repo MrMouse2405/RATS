@@ -36,7 +36,7 @@ void setup() {
 
 	IRSensor::calibrateIR();
 	ratsIMU.calibrate();
-    
+
     setupEvents();
 }
 
@@ -98,14 +98,10 @@ void loop() {
             }
 
             milliseconds current = millis();
-            milliseconds last = current;
-
-            while (IRSensor::getRemainingDots() != 4 && last - current < 90) {
+            while (IRSensor::getRemainingDots() != 4 && millis() - current < 90) {
                 IRSensor::scan();
                 PathFollowing::follow();
-                last = millis();
             }
-            logq.add(String(IRSensor::getRemainingDots())+ " " + String(last - current), odometry.getPose().x, odometry.getPose().y);
 
             if (IRSensor::getRemainingDots() >= 4) {
                 while(!IRSensor::seeingRight()) {
@@ -161,8 +157,8 @@ void loop() {
                 UserInterface::showMessageTruncate(logMessage.substring(i, i + 20), line);
                 line += 1;
             }
-            UserInterface::showMessageTruncate("X: " + String(currentLog->x / 10), line);
-            UserInterface::showMessageTruncate("Y: " + String(currentLog->y / 10), line + 1);
+            UserInterface::showMessageTruncate("Y: " + String(currentLog->x / 1000), line);
+            UserInterface::showMessageTruncate("X: " + String(currentLog->y / 1000), line + 1);
         } else {
             UserInterface::showMessageTruncate("No Logs Available", 0);
         }
@@ -209,7 +205,7 @@ void setupEvents() {
         })
         
         EVENT(Check5cm,{
-            if(millis() - t0 > 400) {
+            if(millis() - t0 >= 200) {
                 FIRE(Reached5cm);
             } else {
                 FIRE(Check5cm);
@@ -234,18 +230,20 @@ void setupEvents() {
 	})
 
 	EVENT(Reached5cm,{
+        PathFollowing::stop();
+        delay(300);
 		auto orientation = ratsIMU.getOrientation();
         logq.add(
             "SENSOR DATA: Pitch: "+ String(orientation.x) + 
                 " Roll: " + String(orientation.y) + 
                 " Reflectance Left: " + String(IRSensor::reflectanceLeft()) +
                 " Reflectance Right: " + String(IRSensor::reflectanceRight()
-                )
-                ,
+                ),
             odometry.getPose().x, 
             odometry.getPose().y
         );
 		
+        PathFollowing::start();
         PathFollowing::speedUp();
         FIRE(CheckFirst2Dots);
         IRSensor::resetPathSignDetector();
