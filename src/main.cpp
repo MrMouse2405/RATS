@@ -26,6 +26,7 @@ void setupEvents();
 void setup() {
 	IRSensor::initializeIR();
 	UserInterface::initializeUI();
+    Wire.begin();
     ratsIMU.myIMU.init();
     ratsIMU.myIMU.enableDefault();
 
@@ -33,12 +34,8 @@ void setup() {
 
 	IRSensor::calibrateIR();
 	ratsIMU.calibrate();
-    // ratsIMU.myIMU.readMag();
-    // UserInterface::showMessageTruncate("X "+String(ratsIMU.myIMU.m.x), 0);
-    // UserInterface::showMessageTruncate("Y "+String(ratsIMU.myIMU.m.y), 1);
-    // UserInterface::showMessageTruncate("Z "+String(ratsIMU.myIMU.m.z), 2);
+    
     setupEvents();
-    while (1);
 }
 
 void loop() {
@@ -74,7 +71,7 @@ void loop() {
         }
 
         if (frameStart - magDebounce > MAG_DEBOUNCE_THRESHOLD) { // Debounce to ensure we aren't logging the same anomaly. This may need to be adjusted.
-            if (ratsIMU.foundAnamoly().exists()) { // TODO: Fix this lol
+            if (ratsIMU.foundAnamoly().exists()) {
                 logq.add("Magnetic Anamoly", odometry.getPose().x, odometry.getPose().y); 
                 magDebounce = millis();
             }
@@ -120,8 +117,6 @@ void loop() {
 	UserInterface::showMessage("Y:" + String(odometry.getY()), 5);
 	UserInterface::clearScreen();
 
-
-    // Scroll through the log using button A and C
     LogQueue<String>::Log* currentLog = logq.getFirst();
     while (true) {
         if (currentLog) {
@@ -257,18 +252,4 @@ void setupEvents() {
             eventManager.fireEvent(CheckFirst2Dots);
         }
 	})
-    
-    EVENT(MagneticAnamoly,{
-        
-       
-    })
-
-    EVENT(SensorEvent,{
-        
-        
-    })
-
-    EVENT(CollisionEvent,{
-        
-    })
 }
