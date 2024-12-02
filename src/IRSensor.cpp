@@ -85,7 +85,7 @@ template<IRSensorAtLocation type>
 class SignScanner {
 public:
     void scan() {
-        if(scanner.scan(lineSensorValues[type] > 500).exists()) {
+        if(scanner.scan(lineSensorValues[type] > 700).exists()) {
             counts += 1;
         }
     }
@@ -114,6 +114,10 @@ void IRSensor::resetPathSignDetector() {
     leftScanner.reset();
 }
 
+void IRSensor::resetPathSignDetectorRight() {
+    rightScanner.reset();
+}
+
 int IRSensor::getHistory() {
     return rightScanner.getCounts();
 }
@@ -122,9 +126,18 @@ void IRSensor::eraseHistory() {
     rightScanner.reset();
 }
 
-bool IRSensor::fastFound2Dots() {
+bool IRSensor::fastFound2DotsLeft() {
 
     if (leftScanner.getCounts() >= 2) {
+        return true;
+    }
+
+    return false;
+}
+
+bool IRSensor::fastFound3DotsRight() {
+
+    if (rightScanner.getCounts() >= 3) {
         return true;
     }
 
@@ -158,6 +171,11 @@ bool IRSensor::seeingRight() {
 bool IRSensor::seeingLeft() {
     return lineSensorValues[LEFT] > 800;
 }
+
+bool IRSensor::seeingCenter() {
+    return lineSensorValues[CENTER] > 800;
+}
+
 
 bool IRSensor::isCollisionDetected() {
     return bumpSensors.leftIsPressed() and bumpSensors.rightIsPressed();

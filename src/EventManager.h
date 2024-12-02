@@ -12,6 +12,8 @@ typedef enum ES
     TurnRight,
     TakeLeft,
     TakeRight,
+    CheckFirst3DotsRight,
+    PrepareCollision,
     NUMBER_OF_EVENTS, // ALWAYS LAST
 } Event;
 

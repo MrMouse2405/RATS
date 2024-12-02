@@ -21,6 +21,8 @@ LogQueue<String> logq = LogQueue<String>();
 
 milliseconds magDebounce = 0;
 
+bool prepareCollision = false;
+
 void setupEvents();
 
 void setup() {
@@ -55,7 +57,9 @@ void loop() {
     bool eventsPushed = false;
     
     PathFollowing::start();
+    PathFollowing::speedUp();
     FIRE(CheckFirst2Dots);
+    FIRE(CheckFirst3DotsRight);
     LOOP {
         const milliseconds frameStart = millis();
     
@@ -77,41 +81,55 @@ void loop() {
             }
         }
         // turn around
-        if(IRSensor::isCollisionDetected()) {
+        if(IRSensor::isCollisionDetected() && prepareCollision) {
             PathFollowing::stop();
             eventManager.cancelAllEvents();
             logq.add("Collision Detected", odometry.getPose().x, odometry.getPose().y);
             PathFollowing::turnAround();
             PathFollowing::start();
-            PathFollowing::speedUp();
             IRSensor::resetPathSignDetector();
+            delay(250);
+            PathFollowing::speedUp();
 
-            // TODO: TURN 
             // found 3!
             while (IRSensor::getRemainingDots() != 3) { 
                 IRSensor::scan(); 
                 PathFollowing::follow();
             }
 
-            // now what?
-            while (IRSensor::getRemainingDots() != 4 || IRSensor::seeingRight()) {
+            milliseconds current = millis();
+            milliseconds last = current;
 
+            while (IRSensor::getRemainingDots() != 4 && last - current < 90) {
+                IRSensor::scan();
+                PathFollowing::follow();
+                last = millis();
             }
+            logq.add(String(IRSensor::getRemainingDots())+ " " + String(last - current), odometry.getPose().x, odometry.getPose().y);
+
+            if (IRSensor::getRemainingDots() >= 4) {
+                while(!IRSensor::seeingRight()) {
+                    IRSensor::scan(); 
+                    PathFollowing::follow();
+                }
+                PathFollowing::turnRight();
+                IRSensor::resetPathSignDetectorRight();
+            } else {
+                while(!IRSensor::seeingLeft()) {
+                    IRSensor::scan(); 
+                    PathFollowing::follow();
+                }
+                PathFollowing::turnLeft();
+                IRSensor::resetPathSignDetectorRight();
+            }
+            prepareCollision = false;
+            IRSensor::resetPathSignDetector();
+            FIRE(CheckFirst2Dots);
+            FIRE(CheckFirst3DotsRight);            
         }	
         // end condition
         if (!PathFollowing::canFollowPath()) {
             eventManager.cancelAllEvents();
-            // check just in case
-            for (int i = 0; i < 10; i ++) {
-                PathFollowing::start();
-                IRSensor::scan();
-                PathFollowing::follow();
-            }
-            if (PathFollowing::canFollowPath()) {
-                FIRE(CheckFirst2Dots);
-                PathFollowing::speedUp();
-                continue;
-            }
             IRSensor::resetPathSignDetector();
             break;
         }
@@ -128,6 +146,7 @@ void loop() {
         sum += frameTime;
         count += 1;
     }
+
 	UserInterface::showMessageNotYielding("FPS:" + String((sum / count)* 100) , 2);
 	UserInterface::showMessageNotYielding("X:" + String(odometry.getX()), 4);
 	UserInterface::showMessage("Y:" + String(odometry.getY()), 5);
@@ -199,10 +218,18 @@ void setupEvents() {
     }
 
     EVENT(CheckFirst2Dots,{
-		if(IRSensor::fastFound2Dots()) {
+		if(IRSensor::fastFound2DotsLeft()) {
 			FIRE(SlowDown);
 		} else {
 			FIRE(CheckFirst2Dots);
+		}
+	})
+
+    EVENT(CheckFirst3DotsRight,{
+		if(IRSensor::fastFound3DotsRight()) {
+			FIRE(PrepareCollision);
+		} else {
+			FIRE(CheckFirst3DotsRight);
 		}
 	})
 
@@ -223,4 +250,9 @@ void setupEvents() {
         FIRE(CheckFirst2Dots);
         IRSensor::resetPathSignDetector();
 	});
+
+    EVENT(PrepareCollision,{
+        PathFollowing::slowToSpeed(75);
+        prepareCollision = true;
+    });
 }

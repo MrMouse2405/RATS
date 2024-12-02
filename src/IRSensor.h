@@ -20,9 +20,12 @@ namespace IRSensor {
     void scan();
 
     void resetPathSignDetector();
-    bool fastFound2Dots();
+    void resetPathSignDetectorRight();
+    bool fastFound2DotsLeft();
+    bool fastFound3DotsRight();
     bool seeingRight();
     bool seeingLeft();
+    bool seeingCenter();
 
     bool isCollisionDetected();
     

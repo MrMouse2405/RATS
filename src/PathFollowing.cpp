@@ -14,6 +14,8 @@ namespace PathFollowing {
     PathFollowerStates state = Ready;
 
     int maxSpeed = MAX_SPEED;
+    int leftSpeed = 0;
+    int rightSpeed = 0;
 }
 
 bool PathFollowing::canFollowPath() {
@@ -29,22 +31,61 @@ void PathFollowing::stop() {
     state = ReachedEnd;
 }
 
-void PathFollowing::turnLeft() {
-    Pololu3piPlus32U4::Motors::setSpeeds(-MAX_SPEED,MAX_SPEED);
-    delay(100);
-    while(!IRSensor::seeingLeft()) {
-        IRSensor::scan();
-    }
-    Pololu3piPlus32U4::Motors::setSpeeds(MAX_SPEED,MAX_SPEED);
+int PathFollowing::getLeftSpeed() {
+    return leftSpeed;
 }
 
-void PathFollowing::turnRight() {
-    Pololu3piPlus32U4::Motors::setSpeeds(MAX_SPEED,-MAX_SPEED);
-    delay(100);
-    while(!IRSensor::seeingRight()) {
-        IRSensor::scan();
+int PathFollowing::getRightSpeed() {
+    return rightSpeed;
+}
+
+void PathFollowing::turnLeft() {
+    Pololu3piPlus32U4::Motors::setSpeeds(0,0);
+    delay(20);
+    Pololu3piPlus32U4::Motors::setSpeeds(-MAX_SPEED,MAX_SPEED);
+    delay(110);
+    Pololu3piPlus32U4::Motors::setSpeeds(0,0);
+    delay(20);
+    // while(!IRSensor::detectLine().exists()) {
+    //     IRSensor::scan();
+    // }
+    Pololu3piPlus32U4::Motors::setSpeeds(MAX_SPEED-50,MAX_SPEED);
+    milliseconds startTime = millis();
+    while (millis() - startTime < 300) {
+        while (millis() - startTime < 150) {}
+        if (IRSensor::detectLine().exists() && IRSensor::detectLine().get() > 2000) {
+            break;
+        }
     }
-    Pololu3piPlus32U4::Motors::setSpeeds(MAX_SPEED,MAX_SPEED);
+}
+
+// void PathFollowing::turnRight() {
+//     Pololu3piPlus32U4::Motors::setSpeeds(MAX_SPEED,0);
+//     delay(200);
+//     while(!IRSensor::detectLine().exists()) {
+//         IRSensor::scan();
+//     }
+//     Pololu3piPlus32U4::Motors::setSpeeds(MAX_SPEED,MAX_SPEED);
+// }
+
+void PathFollowing::turnRight() {
+    Pololu3piPlus32U4::Motors::setSpeeds(0,0);
+    delay(20);
+    Pololu3piPlus32U4::Motors::setSpeeds(MAX_SPEED,-MAX_SPEED);
+    delay(110);
+    Pololu3piPlus32U4::Motors::setSpeeds(0,0);
+    delay(20);
+    // while(!IRSensor::detectLine().exists()) {
+    //     IRSensor::scan();
+    // }
+    Pololu3piPlus32U4::Motors::setSpeeds(MAX_SPEED,MAX_SPEED-50);
+    milliseconds startTime = millis();
+    while (millis() - startTime < 300) {
+        while (millis() - startTime < 150) {}
+        if (IRSensor::detectLine().exists() && IRSensor::detectLine().get() > 2000) {
+            break;
+        }
+    }
 }
 
 
@@ -52,11 +93,16 @@ void PathFollowing::turnAround() {
     Pololu3piPlus32U4::Motors::setSpeeds(-50,-50);
     delay(2);
     Pololu3piPlus32U4::Motors::setSpeeds(MAX_SPEED,-MAX_SPEED);
-    delay(200);
+    delay(190);
+    Pololu3piPlus32U4::Motors::setSpeeds(-50,-50);
+    delay(100);
+    IRSensor::resetPathSignDetector();
     Pololu3piPlus32U4::Motors::setSpeeds(0,0);
 }
 
-
+void PathFollowing::slowToSpeed(int speed) {
+    maxSpeed = speed;
+}
 
 void PathFollowing::speedUp() {
     maxSpeed = MAX_SPEED;
@@ -129,6 +175,9 @@ void PathFollowing::follow() {
     leftSpeed = constrain(leftSpeed, MIN_SPEED, (int16_t)maxSpeed);
     rightSpeed = constrain(rightSpeed, MIN_SPEED, (int16_t)maxSpeed);
    
+    PathFollowing::leftSpeed = leftSpeed;
+    PathFollowing::rightSpeed = rightSpeed;
+
     // Zoom
     Pololu3piPlus32U4::Motors::setSpeeds(leftSpeed, rightSpeed);
 }

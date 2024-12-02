@@ -3,7 +3,7 @@
 #include "Pololu3piPlus32U4.h"
 #include "Option.h"
 
-// Time (ms) spent sampling by IR Sensors
+// Time (ps) spent sampling by IR Sensors
 #define IRSENSOR_SAMPLING_TIME 2000
 
 // time (ms) to wait until a decision is made for Dot Signs

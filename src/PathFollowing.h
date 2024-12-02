@@ -7,6 +7,7 @@ namespace PathFollowing {
     void stop();
 
     void slowDown();
+    void slowToSpeed(int speed);
     void speedUp();
     
     bool canFollowPath();
@@ -15,4 +16,7 @@ namespace PathFollowing {
     void turnLeft();
     void turnRight();
     void turnAround();
+
+    int getLeftSpeed();
+    int getRightSpeed();
 }
