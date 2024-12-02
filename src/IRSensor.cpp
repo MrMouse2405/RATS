@@ -125,7 +125,6 @@ void IRSensor::eraseHistory() {
 bool IRSensor::fastFound2Dots() {
 
     if (leftScanner.getCounts() >= 2) {
-        resetPathSignDetector();
         return true;
     }
 
@@ -153,11 +152,11 @@ int IRSensor::reflectanceLeft() {
 
 
 bool IRSensor::seeingRight() {
-    return lineSensorValues[RIGHT] > 900;
+    return lineSensorValues[RIGHT] > 800;
 }
 
 bool IRSensor::seeingLeft() {
-    return lineSensorValues[LEFT] > 900;
+    return lineSensorValues[LEFT] > 800;
 }
 
 bool IRSensor::isCollisionDetected() {

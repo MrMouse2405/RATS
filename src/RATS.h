@@ -14,7 +14,7 @@
 
 // IR Sensor result values below this will be considered to 
 // be not on black line.
-#define LINE_THRESHOLD 500
+#define LINE_THRESHOLD 600
 
 // Maximum & Minimum speed the motors will be allowed to turn.
 #define MAX_SPEED 200 // 1.5 m/s

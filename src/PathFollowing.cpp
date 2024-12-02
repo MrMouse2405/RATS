@@ -31,15 +31,20 @@ void PathFollowing::stop() {
 
 void PathFollowing::turnLeft() {
     Pololu3piPlus32U4::Motors::setSpeeds(-MAX_SPEED,MAX_SPEED);
-    delay(125);
+    delay(100);
+    while(!IRSensor::seeingLeft()) {
+        IRSensor::scan();
+    }
     Pololu3piPlus32U4::Motors::setSpeeds(MAX_SPEED,MAX_SPEED);
 }
 
 void PathFollowing::turnRight() {
     Pololu3piPlus32U4::Motors::setSpeeds(MAX_SPEED,-MAX_SPEED);
-    delay(125);
+    delay(100);
+    while(!IRSensor::seeingRight()) {
+        IRSensor::scan();
+    }
     Pololu3piPlus32U4::Motors::setSpeeds(MAX_SPEED,MAX_SPEED);
-    delay(50);
 }
 
 

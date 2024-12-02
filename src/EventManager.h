@@ -3,7 +3,6 @@
 typedef enum ES
 {
     CheckFirst2Dots,
-    MagneticAnamoly,
     SlowDown,
     SpeedUp,
     Reached5cm,
@@ -11,8 +10,8 @@ typedef enum ES
     Collision,
     TurnLeft,
     TurnRight,
-    SensorEvent,
-    CollisionEvent,
+    TakeLeft,
+    TakeRight,
     NUMBER_OF_EVENTS, // ALWAYS LAST
 } Event;
 

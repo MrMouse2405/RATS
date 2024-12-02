@@ -84,19 +84,35 @@ void loop() {
             PathFollowing::turnAround();
             PathFollowing::start();
             PathFollowing::speedUp();
-            FIRE(CheckFirst2Dots);
+            IRSensor::resetPathSignDetector();
+
+            // TODO: TURN 
+            // found 3!
+            while (IRSensor::getRemainingDots() != 3) { 
+                IRSensor::scan(); 
+                PathFollowing::follow();
+            }
+
+            // now what?
+            while (IRSensor::getRemainingDots() != 4 || IRSensor::seeingRight()) {
+
+            }
         }	
         // end condition
         if (!PathFollowing::canFollowPath()) {
             eventManager.cancelAllEvents();
             // check just in case
-            PathFollowing::start();
-            IRSensor::scan();
-            PathFollowing::follow();
+            for (int i = 0; i < 10; i ++) {
+                PathFollowing::start();
+                IRSensor::scan();
+                PathFollowing::follow();
+            }
             if (PathFollowing::canFollowPath()) {
                 FIRE(CheckFirst2Dots);
+                PathFollowing::speedUp();
                 continue;
             }
+            IRSensor::resetPathSignDetector();
             break;
         }
         // deal with low priority events
@@ -174,7 +190,7 @@ void setupEvents() {
         })
         
         EVENT(Check5cm,{
-            if(millis() - t0 > 350) {
+            if(millis() - t0 > 400) {
                 FIRE(Reached5cm);
             } else {
                 FIRE(Check5cm);
@@ -190,66 +206,21 @@ void setupEvents() {
 		}
 	})
 
-
 	EVENT(Reached5cm,{
-		int remaining = IRSensor::getRemainingDots();
+		auto orientation = ratsIMU.getOrientation();
+        logq.add(
+            "SENSOR DATA: Pitch: "+ String(orientation.x) + 
+                " Roll: " + String(orientation.y) + 
+                " Reflectance Left: " + String(IRSensor::reflectanceLeft()) +
+                " Reflectance Right: " + String(IRSensor::reflectanceRight()
+                )
+                ,
+            odometry.getPose().x, 
+            odometry.getPose().y
+        );
+		
+        PathFollowing::speedUp();
+        FIRE(CheckFirst2Dots);
         IRSensor::resetPathSignDetector();
-        // stop, get some rest, stop running around for a while
-        PathFollowing::stop();
-        PathFollowing::follow();
-        PathFollowing::start();
-		switch(remaining) {
-			case 0: {
-				auto orientation = ratsIMU.getOrientation();
-                logq.add("SENSOR DATA: Pitch: "+ String(orientation.x) + 
-                " Roll: " + String(orientation.y)
-                + " Reflectance Left: " + String(IRSensor::reflectanceLeft()) +
-                " Reflectance Right: " + String(IRSensor::reflectanceRight()),
-                odometry.getPose().x, odometry.getPose().y);
-				delay(100);
-				FIRE(CheckFirst2Dots);
-				break;
-			}
-			case 1: {
-                if (IRSensor::getHistory() == 3) {
-				    FIRE(TurnLeft);
-                }
-                else {
-                    FIRE(TurnRight);
-                }
-				break;
-			}
-			case 2: {
-				FIRE(TurnRight);
-				break;
-			}
-			default:
-				break;
-		}
-        IRSensor::eraseHistory();
-        FIRE(SpeedUp);
 	});
-
-	EVENT(TurnLeft,{
-        if (IRSensor::getRemainingDots() == 1) {
-            eventManager.fireEvent(TurnRight);
-        }
-		else if(!IRSensor::seeingLeft()) {
-			eventManager.fireEvent(TurnLeft);
-		}
-        else {
-            PathFollowing::turnLeft();
-            eventManager.fireEvent(CheckFirst2Dots);
-        }
-	})
-
-	EVENT(TurnRight,{
-		if(!IRSensor::seeingRight()) {
-			eventManager.fireEvent(TurnRight);
-		}
-        else {
-            PathFollowing::turnRight();
-            eventManager.fireEvent(CheckFirst2Dots);
-        }
-	})
 }
