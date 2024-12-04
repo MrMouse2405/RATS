@@ -85,12 +85,12 @@ typedef unsigned long milliseconds;
  */
 typedef Option<int> LineDetectionResult;
 
-template <typename T>
+template<typename T>
 struct Vec2 {
     T x, y;
 };
 
-template <typename T>
+template<typename T>
 struct Vec3 {
     T x, y, z;
 };

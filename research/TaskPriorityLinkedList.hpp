@@ -29,8 +29,8 @@ public:
         fired += 1;
     }
 
-    void next() {
-
+    void runNext() {
+        
     }
 
     void reset
